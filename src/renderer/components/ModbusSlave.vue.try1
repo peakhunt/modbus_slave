@@ -1,0 +1,371 @@
+<template>
+<v-container grid-list-md fluid class="mt-0">
+  <v-layout row wrap>
+    <v-flex xs12>
+      <v-card>
+        <v-card-title>
+          <h3>Communication Parameters</h3>
+        </v-card-title>
+
+        <v-card-text>
+         <v-btn
+          color="pink"
+          dark
+          small
+          absolute
+          bottom
+          right
+          fab
+          @click.native="show_dialog_add_new_group = true"
+         >
+           <v-icon>add</v-icon>
+         </v-btn>
+
+         <v-layout row wrap>
+          <v-flex xs6>
+            <v-container >
+                <v-layout row> <!-- slave ID -->
+                  <v-flex xs4>
+                    <v-subheader>Slave ID</v-subheader>
+                  </v-flex>
+                  <v-flex xs8>
+                    <v-text-field
+                     label="Slave ID"
+                     v-model="slave_id"
+                    ></v-text-field>
+                  </v-flex>
+                </v-layout>
+
+                <v-layout row> <!-- protocol select -->
+                  <v-flex xs4>
+                    <v-subheader>Protocol</v-subheader>
+                  </v-flex>
+                  <v-flex xs8>
+                    <v-select
+                     v-bind:items="protocol_list"
+                     label="Protocol"
+                     bottom
+                     v-model="protocol"
+                    ></v-select>
+                  </v-flex>
+                </v-layout>
+            </v-container>
+          </v-flex>
+
+          <v-flex xs6>
+            <!-- tcp protocol parameters -->
+            <v-container v-show="protocol === 'tcp'">
+              <v-layout row>
+                <v-flex xs4>
+                  <v-subheader>TCP Port</v-subheader>
+                </v-flex>
+                <v-flex xs8>
+                  <v-text-field
+                   label="TCP Port"
+                   v-model="protocol_param_tcp.port"
+                  ></v-text-field>
+                </v-flex>
+              </v-layout>
+            </v-container>
+
+            <!-- rtu protocol parameters -->
+            <v-container v-show="protocol === 'rtu'">
+              <v-layout row>
+                <v-flex xs4>
+                  <v-subheader>Serial Port</v-subheader>
+                </v-flex>
+                <v-flex xs8>
+                  <v-select
+                   v-bind:items="serial_ports"
+                   label="Serial Port"
+                   bottom
+                   v-model="protocol_param_rtu.serial_port"
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+
+              <v-layout row>
+                <v-flex xs4>
+                  <v-subheader>Baud Rate</v-subheader>
+                </v-flex>
+                <v-flex xs8>
+                  <v-select
+                   v-bind:items="baud_rate_list"
+                   label="Baud Rate"
+                   bottom
+                   v-model="protocol_param_rtu.baud_rate"
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+
+              <v-layout row>
+                <v-flex xs4>
+                  <v-subheader>Parity</v-subheader>
+                </v-flex>
+                <v-flex xs8>
+                  <v-select
+                   v-bind:items="parity_list"
+                   label="Parity"
+                   bottom
+                   v-model="protocol_param_rtu.parity"
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+
+              <v-layout row>
+                <v-flex xs4>
+                  <v-subheader>Data Bit</v-subheader>
+                </v-flex>
+                <v-flex xs8>
+                  <v-select
+                   v-bind:items="data_bit_list"
+                   label="Data Bit"
+                   bottom
+                   v-model="protocol_param_rtu.data_bit"
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+
+              <v-layout row>
+                <v-flex xs4>
+                  <v-subheader>Stop Bit</v-subheader>
+                </v-flex>
+                <v-flex xs8>
+                  <v-select
+                   v-bind:items="stop_bit_list"
+                   label="Stop Bit"
+                   bottom
+                   v-model="protocol_param_rtu.stop_bit"
+                  ></v-select>
+                </v-flex>
+              </v-layout>
+
+            </v-container>
+          </v-flex>
+         </v-layout>
+
+        </v-card-text>
+      </v-card>
+    </v-flex>
+
+    <v-flex xs6 v-for="group in modbus_reg_groups">
+      <register-group :group="group" :reg_list="group.regs"></register-group>
+    </v-flex>
+
+    <v-dialog v-model="show_dialog_add_new_group">
+      <v-card>
+        <v-card-title class="headline">Add New Register Group</v-card-title>
+        <v-card-text>
+          <v-layout row>
+            <v-flex xs4>
+              <v-subheader>Group Name</v-subheader>
+            </v-flex>
+            <v-flex xs8>
+              <v-text-field
+                label="Group Name"
+                v-model="dialog_new_group_name"
+                >
+              </v-text-field>
+            </v-flex>
+          </v-layout>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red" flat @click.native="show_dialog_add_new_group = false">Cancel</v-btn>
+          <v-btn color="primary" flat @click.native="add_new_group">Add</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="show_dialog_add_regs">
+      <v-card>
+        <v-card-title class="headline">Add Registers to group</v-card-title>
+        <v-card-text>
+          <v-layout row>
+            <v-flex xs4>
+              <v-subheader>Register Type</v-subheader>
+            </v-flex>
+            <v-flex xs8>
+              <v-select
+                v-bind:items="register_type_list"
+                label="Register Type"
+                bottom
+                v-model="dialog_new_reg_type"
+                >
+              </v-select>
+            </v-flex>
+          </v-layout>
+
+          <v-layout row>
+            <v-flex xs4>
+              <v-subheader>Start Address</v-subheader>
+            </v-flex>
+            <v-flex xs8>
+              <v-text-field
+                label="Start Address"
+                v-model="dialog_start_address"
+                >
+              </v-text-field>
+            </v-flex>
+          </v-layout>
+
+          <v-layout row>
+            <v-flex xs4>
+              <v-subheader>Number of Registers</v-subheader>
+            </v-flex>
+            <v-flex xs8>
+              <v-text-field
+                label="Number of Registers"
+                v-model="dialog_num_regs"
+                >
+              </v-text-field>
+            </v-flex>
+          </v-layout>
+
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red" flat @click.native="show_dialog_add_regs = false">Cancel</v-btn>
+          <v-btn color="primary" flat @click.native="add_registers_to_group">Add</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+  </v-layout>
+</v-container>
+</template>
+
+<script>
+
+import RegisterGroup from '@/components/RegisterGroup'
+
+export default {
+  components: { RegisterGroup },
+  methods: {
+    add_new_group: function () {
+      this.modbus_reg_groups.push({
+        name: this.dialog_new_group_name,
+        regs: [
+        ]
+      })
+      this.show_dialog_add_new_group = false
+    },
+    remove_group: function (group) {
+      const ndx = this.modbus_reg_groups.indexOf(group)
+
+      if (ndx > -1) {
+        this.modbus_reg_groups.splice(ndx, 1)
+      }
+    },
+    show_add_regs: function (group) {
+      this.dialog_selected_group = group
+      this.show_dialog_add_regs = true
+    },
+    add_registers_to_group: function () {
+      var addr
+      var v
+
+      for (var i = 0; i < this.dialog_num_regs; i++) {
+        addr = this.dialog_start_address + i
+
+        switch (this.dialog_new_reg_type) {
+          case 'coil':
+          case 'discrete':
+            v = false
+            break
+
+          case 'holding':
+          case 'input':
+            v = 0
+            break
+        }
+
+        var reg = {
+          reg_type: this.dialog_new_reg_type,
+          address: addr,
+          desc: this.dialog_new_reg_type + ' ' + addr,
+          value: v
+        }
+
+        this.dialog_selected_group.regs.push(reg)
+      }
+      this.show_dialog_add_regs = false
+    }
+  },
+  data () {
+    return {
+      slave_id: 1,
+      protocol: 'tcp',
+      protocol_param_tcp: {
+        port: 1502
+      },
+      protocol_param_rtu: {
+        serial_port: '/dev/ttyUSB0',
+        baud_rate: 115200,
+        parity: 'None',
+        data_bit: 8,
+        stop_bit: 1
+      },
+
+      protocol_list: ['tcp', 'rtu'],
+      serial_ports: ['/dev/ttyUSB0', '/dev/ttyUSB1'],
+      baud_rate_list: [9600, 19200, 38400, 57600, 115200],
+      parity_list: ['None', 'Even', 'Odd'],
+      data_bit_list: [5, 6, 7, 8],
+      stop_bit_list: [1, 2],
+
+      show_dialog_add_new_group: false,
+      dialog_new_group_name: '',
+
+      show_dialog_add_regs: false,
+      register_type_list: ['coil', 'discrete', 'holding', 'input'],
+      dialog_new_reg_type: 'coil',
+      dialog_start_address: 0,
+      dialog_num_regs: 1,
+      dialog_selected_group: null,
+
+      modbus_reg_groups: [
+        {
+          name: 'Sample group 1',
+          regs: [
+            {
+              reg_type: 'coil',
+              address: 0,
+              desc: 'zolla cool',
+              value: false
+            },
+            {
+              reg_type: 'coil',
+              address: 1,
+              desc: 'zolla cool',
+              value: false
+            }
+          ]
+        },
+        {
+          name: 'Sample group 2',
+          regs: [
+          ]
+        },
+        {
+          name: 'Sample group 3',
+          regs: [
+          ]
+        }
+      ],
+      modbus_reg_discrete_inputs: {
+      },
+      modbus_reg_holings: {
+      },
+      modbus_reg_inputs: {
+      },
+      group: {
+        regs: []
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+</style>
