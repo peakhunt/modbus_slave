@@ -1,6 +1,6 @@
 # modbus_slave
 
-!!! This project has been abandoned because I was seeing a completely new design of the internal software.
+!!! This project has been abandoned because I was seeing a need for a completely new design of the internal software.
 
 
 Please go here [modbus_slave2](https://github.com/peakhunt/modbus_slave2).
